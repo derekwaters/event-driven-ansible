@@ -44,6 +44,7 @@ import json
 import logging
 import ssl
 import typing
+import xmltodict
 from typing import Any
 
 from aiohttp import web
@@ -59,7 +60,11 @@ routes = web.RouteTableDef()
 async def webhook(request: web.Request) -> web.Response:
     """Return response to webhook request."""
     try:
-        payload = await request.json()
+        if request.headers["Content-Type"] == "text/xml":
+            payload_text = await request.text()
+            payload = xmltodict(payload_text)
+        else:
+            payload = await request.json()
     except json.JSONDecodeError as exc:
         logger.warning("Wrong body request: failed to decode JSON payload: %s", exc)
         raise web.HTTPBadRequest(text="Invalid JSON payload") from None
